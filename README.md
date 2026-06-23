@@ -23,12 +23,6 @@ brew trust bstaeheli/homebrew-komai
 brew install --cask komai
 ```
 
-If you see an error like `Error: Refusing to load cask ... from untrusted tap`, run:
-```bash
-brew trust bstaeheli/homebrew-komai
-```
-Then retry the install.
-
 ### Upgrade Komai
 
 ```bash

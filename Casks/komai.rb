@@ -18,12 +18,4 @@ cask "komai" do
   depends_on macos: :ventura
 
   app "komai.app"
-
-  caveats <<~EOS
-    Komai is not signed or notarized by Apple, so Gatekeeper blocks the first
-    launch. To open it:
-      * macOS 13/14: right-click komai.app in /Applications and choose "Open".
-      * macOS 15+:   try to open it once, then go to
-                     System Settings -> Privacy & Security -> "Open Anyway".
-  EOS
 end
