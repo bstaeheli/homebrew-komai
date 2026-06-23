@@ -16,9 +16,18 @@ client for the desktop. 🦁
 # Add the tap
 brew tap bstaeheli/homebrew-komai
 
+# Trust the tap (Homebrew requires this for casks from third-party taps)
+brew trust bstaeheli/homebrew-komai
+
 # Install Komai (it is a GUI app, so it installs as a cask)
 brew install --cask komai
 ```
+
+If you see an error like `Error: Refusing to load cask ... from untrusted tap`, run:
+```bash
+brew trust bstaeheli/homebrew-komai
+```
+Then retry the install.
 
 ### Upgrade Komai
 
