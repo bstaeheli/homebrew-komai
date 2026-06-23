@@ -15,7 +15,7 @@ cask "komai" do
 
   # Komai only ships an Apple Silicon DMG, and it targets macOS 13.3+.
   depends_on arch: :arm64
-  depends_on macos: ">= :ventura"
+  depends_on macos: :ventura
 
   app "komai.app"
 
