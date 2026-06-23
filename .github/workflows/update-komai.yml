@@ -1,0 +1,100 @@
+name: Update Komai Formula
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    name: Check and update Komai formula
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch latest Komai release
+        id: latest_release
+        run: |
+          # Get the latest release info
+          LATEST_RELEASE=$(curl -s https://api.github.com/repos/etkecc/komai/releases/latest)
+          TAG=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
+          VERSION=${TAG#v}
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Find the ARM64 DMG download URL
+          DMG_URL=$(echo "$LATEST_RELEASE" | jq -r '.assets[] | select(.name | contains("macos-arm64") and contains(".dmg")) | .browser_download_url' | head -1)
+
+          if [ -z "$DMG_URL" ]; then
+            echo "ERROR: Could not find ARM64 DMG for Komai $TAG"
+            exit 1
+          fi
+
+          echo "dmg_url=$DMG_URL" >> $GITHUB_OUTPUT
+          echo "Found Komai $VERSION at $DMG_URL"
+
+      - name: Calculate SHA256
+        id: sha256
+        env:
+          DMG_URL: ${{ steps.latest_release.outputs.dmg_url }}
+        run: |
+          # Download the DMG and calculate SHA256
+          curl -sL "$DMG_URL" -o /tmp/komai.dmg
+          SHA256=$(sha256sum /tmp/komai.dmg | cut -d' ' -f1)
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "SHA256: $SHA256"
+          rm /tmp/komai.dmg
+
+      - name: Read current formula
+        id: current
+        run: |
+          CURRENT_VERSION=$(grep -oP 'komai-\K[0-9.-]+(?=-macos-arm64)' Formula/komai.rb | head -1)
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version in formula: $CURRENT_VERSION"
+
+      - name: Update formula if needed
+        id: update
+        env:
+          NEW_VERSION: ${{ steps.latest_release.outputs.version }}
+          CURRENT_VERSION: ${{ steps.current.outputs.version }}
+          NEW_DMG_URL: ${{ steps.latest_release.outputs.dmg_url }}
+          NEW_SHA256: ${{ steps.sha256.outputs.sha256 }}
+        run: |
+          if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+            echo "Updating from $CURRENT_VERSION to $NEW_VERSION"
+
+            # Update the formula
+            sed -i 's|url ".*komai-.*-macos-arm64\.dmg"|url "'$NEW_DMG_URL'"|' Formula/komai.rb
+            sed -i 's/sha256 "[a-f0-9]\{64\}"/sha256 "'$NEW_SHA256'"/' Formula/komai.rb
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+            echo "Already at latest version: $NEW_VERSION"
+          fi
+
+      - name: Commit and push changes
+        if: steps.update.outputs.needs_update == 'true'
+        env:
+          NEW_VERSION: ${{ steps.latest_release.outputs.version }}
+          NEW_SHA256: ${{ steps.sha256.outputs.sha256 }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add Formula/komai.rb
+          git commit -m "chore: update komai to $NEW_VERSION
+
+Updated SHA256: $NEW_SHA256"
+          git push origin main
+
+      - name: Notify if up to date
+        if: steps.update.outputs.needs_update == 'false'
+        run: echo "✓ Komai formula is already at the latest version"

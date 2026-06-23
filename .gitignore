@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Homebrew
+Bottles/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Temp files
+mnt/
+/tmp/
+*.dmg
