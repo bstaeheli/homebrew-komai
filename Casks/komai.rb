@@ -1,6 +1,6 @@
 cask "komai" do
-  version "2026.08.04.1"
-  sha256 "993cefaf3e68c68972bc2c65beb5631f3d0be26bad5eac4a1987686e518aafe2"
+  version "2026.08.10.0"
+  sha256 "838a58b1334e15ffb2a9a4b900dce8e146b3694bc03a1c4d64d28482916af78f"
 
   url "https://github.com/etkecc/komai/releases/download/v#{version}/komai-#{version}-macos-arm64.dmg",
       verified: "github.com/etkecc/komai/"
